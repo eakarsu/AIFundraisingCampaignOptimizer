@@ -3,10 +3,17 @@ const pool = require('../db');
 const auth = require('../middleware/auth');
 const { callAI } = require('../openrouter');
 
+router.use(auth);
+
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM ab_tests ORDER BY created_at DESC');
-    res.json(result.rows);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+    const countResult = await pool.query('SELECT COUNT(*) FROM ab_tests');
+    const total = parseInt(countResult.rows[0].count);
+    const result = await pool.query('SELECT * FROM ab_tests ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]);
+    res.json({ data: result.rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (err) {
     console.error('List AB tests error:', err);
     res.status(500).json({ error: 'Failed to fetch AB tests' });
@@ -98,15 +105,16 @@ Goal: ${goal || 'Increase donation conversion rate'}`;
   }
 });
 
-// POST /ai/analyze - AI analyzes A/B test results
+// POST /ai/analyze - AI analyzes A/B test results, auto-rolls out winner if confidence > 80%
 router.post('/ai/analyze', async (req, res) => {
   try {
-    const { test_name, variant_a_data, variant_b_data, metric, sample_size } = req.body;
+    const { test_id, test_name, variant_a_data, variant_b_data, metric, sample_size } = req.body;
     const systemPrompt = `You are a conversion rate optimization expert for nonprofit fundraising. Analyze A/B test results and provide statistically informed recommendations. Respond in JSON format:
 {
   "test_summary": "string",
   "winner": "string",
   "confidence_level": "string",
+  "confidence_score": number,
   "statistical_significance": "string",
   "variant_a_performance": {"metric_value": "string", "conversion_rate": "string", "sample_size": "string"},
   "variant_b_performance": {"metric_value": "string", "conversion_rate": "string", "sample_size": "string"},
@@ -126,7 +134,23 @@ Sample Size: ${sample_size || '1000 total visitors'}`;
     const aiResponse = await callAI(systemPrompt, userPrompt);
     let parsed;
     try { parsed = JSON.parse(aiResponse); } catch { parsed = { suggestions: aiResponse }; }
-    res.json({ success: true, data: parsed });
+
+    // Auto-rollout: if confidence > 80% and we have a test_id, mark it as rolled out
+    let autoRolledOut = false;
+    if (test_id && parsed.confidence_score && parseFloat(parsed.confidence_score) > 80 && parsed.winner && parsed.winner !== 'inconclusive') {
+      try {
+        const winnerContent = parsed.winner === 'variant_b' ? variant_b_data : variant_a_data;
+        await pool.query(
+          `UPDATE ab_tests SET auto_rolled_out = TRUE, winner = $1, status = 'completed' WHERE id = $2`,
+          [parsed.winner, test_id]
+        );
+        autoRolledOut = true;
+      } catch (rolloutErr) {
+        console.error('Auto-rollout error:', rolloutErr);
+      }
+    }
+
+    res.json({ success: true, data: parsed, auto_rolled_out: autoRolledOut });
   } catch (err) {
     console.error('AI AB test analyze error:', err);
     res.status(500).json({ error: 'Failed to analyze AB test results' });

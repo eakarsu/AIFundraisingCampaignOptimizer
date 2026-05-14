@@ -3,11 +3,18 @@ const pool = require('../db');
 const auth = require('../middleware/auth');
 const { callAI } = require('../openrouter');
 
-// GET / - list donors
+router.use(auth);
+
+// GET / - list donors with pagination
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM donors ORDER BY created_at DESC');
-    res.json(result.rows);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+    const countResult = await pool.query('SELECT COUNT(*) FROM donors');
+    const total = parseInt(countResult.rows[0].count);
+    const result = await pool.query('SELECT * FROM donors ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]);
+    res.json({ data: result.rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (err) {
     console.error('List donors error:', err);
     res.status(500).json({ error: 'Failed to fetch donors' });
@@ -26,10 +33,16 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST / - create donor
+// POST / - create donor (with deduplication by email)
 router.post('/', async (req, res) => {
   try {
     const { name, email, phone, total_donated, donation_count, last_donation_date, segment, notes } = req.body;
+    if (email) {
+      const existing = await pool.query('SELECT id FROM donors WHERE email = $1', [email]);
+      if (existing.rows.length > 0) {
+        return res.status(409).json({ error: 'Donor with this email already exists', existing_id: existing.rows[0].id });
+      }
+    }
     const result = await pool.query(
       `INSERT INTO donors (name, email, phone, total_donated, donation_count, last_donation_date, segment, notes)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,

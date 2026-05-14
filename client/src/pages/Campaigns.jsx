@@ -1,5 +1,7 @@
-import { Target } from 'lucide-react';
+import { useState } from 'react';
+import { Target, Users, Info } from 'lucide-react';
 import CrudPage from '../components/CrudPage';
+import CampaignDonorsTab from '../components/CampaignDonorsTab';
 
 const fields = [
   { key: 'name', label: 'Campaign Name', placeholder: 'Spring Fundraiser 2026' },
@@ -32,8 +34,55 @@ const aiActions = [
   { action: 'optimize', label: 'Optimize Campaign', getBody: (sel) => ({ campaignId: sel?._id || sel?.id, name: sel?.name, goal: sel?.goal, raised: sel?.raised }) },
 ];
 
+function CampaignDetail(selected) {
+  const [activeTab, setActiveTab] = useState('details');
+
+  return (
+    <div>
+      <div className="flex gap-2 mb-4 border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab('details')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'details'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Info size={14} /> Details
+        </button>
+        <button
+          onClick={() => setActiveTab('donors')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'donors'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Users size={14} /> Donors
+        </button>
+      </div>
+
+      {activeTab === 'details' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {fields.map(f => (
+            <div key={f.key} className={f.type === 'textarea' ? 'md:col-span-2' : ''}>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{f.label}</label>
+              <p className="mt-1 text-slate-800 whitespace-pre-wrap">
+                {selected[f.key] !== undefined && selected[f.key] !== null ? String(selected[f.key]) : '-'}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'donors' && <CampaignDonorsTab campaign={selected} />}
+    </div>
+  );
+}
+
 export default function Campaigns() {
   return <CrudPage title="Campaigns" resource="campaigns" icon={Target}
                    gradient="from-indigo-600 to-indigo-800" fields={fields} columns={columns}
-                   aiActions={aiActions} itemLabel="Campaign" />;
+                   aiActions={aiActions} itemLabel="Campaign"
+                   renderDetail={(sel) => <CampaignDetail {...sel} id={sel.id} />} />;
 }

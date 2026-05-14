@@ -56,6 +56,7 @@ async function seed() {
         target_audience VARCHAR(255),
         tone VARCHAR(100),
         status VARCHAR(50) DEFAULT 'draft',
+        open_rate DECIMAL(5,2),
         created_at TIMESTAMP DEFAULT NOW()
       );
 
@@ -147,7 +148,17 @@ async function seed() {
         winner VARCHAR(10),
         improvement_pct DECIMAL(5,2),
         status VARCHAR(50) DEFAULT 'draft',
+        auto_rolled_out BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS campaign_donors (
+        id SERIAL PRIMARY KEY,
+        campaign_id INTEGER REFERENCES campaigns(id) ON DELETE CASCADE,
+        donor_id INTEGER REFERENCES donors(id) ON DELETE CASCADE,
+        amount DECIMAL(10,2),
+        donated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(campaign_id, donor_id)
       );
 
       CREATE TABLE IF NOT EXISTS outreach_messages (

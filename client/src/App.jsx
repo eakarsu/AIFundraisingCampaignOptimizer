@@ -6,7 +6,8 @@ import {
   GitBranch, MessageSquare, TrendingUp, Calendar, Sparkles,
   LogOut, Menu, X, ChevronRight
 } from 'lucide-react';
-import { api } from './api';
+import { api, apiEvents } from './api';
+import Toast from './components/Toast';
 import Dashboard from './pages/Dashboard';
 import Campaigns from './pages/Campaigns';
 import Donors from './pages/Donors';
@@ -23,7 +24,27 @@ import Outreach from './pages/Outreach';
 import Goals from './pages/Goals';
 import ContentCalendar from './pages/Calendar';
 import AICenter from './pages/AICenter';
+import AIPredictions from './pages/AIPredictions';
+import Integrations from './pages/Integrations';
+import Backlog from './pages/Backlog'; // Apply pass 5
 import Login from './pages/Login';
+
+// === Batch 04 Gaps & Frontend Mounts ===
+import CfAgenticGrantProspectingScanningGrant from './pages/CfAgenticGrantProspectingScanningGrant';
+import CfDonorEngagementScoringWithRealTime from './pages/CfDonorEngagementScoringWithRealTime';
+import CfEventRoiSimulatorPredictingAttendanc from './pages/CfEventRoiSimulatorPredictingAttendanc';
+import CfMultiStakeholderSurveySynthesisColle from './pages/CfMultiStakeholderSurveySynthesisColle';
+import CfPeerToPeerFundraisingTeamBuilder from './pages/CfPeerToPeerFundraisingTeamBuilder';
+import CfGovernmentProcurementAdvisorScanning from './pages/CfGovernmentProcurementAdvisorScanning';
+import GapNoDonorLifetimeValuePredictionEndpo from './pages/GapNoDonorLifetimeValuePredictionEndpo';
+import GapNoMajorDonorCultivationPlanGenerato from './pages/GapNoMajorDonorCultivationPlanGenerato';
+import GapNoVolunteerSkillMatchingAiPeermatch from './pages/GapNoVolunteerSkillMatchingAiPeermatch';
+import GapNoEventDemandForecasting from './pages/GapNoEventDemandForecasting';
+import GapLimitedNotificationsNoDedicatedModul from './pages/GapLimitedNotificationsNoDedicatedModul';
+import GapNoWebhookDispatchForDonorEvents from './pages/GapNoWebhookDispatchForDonorEvents';
+import GapNoFileUploadPipelineForDonor from './pages/GapNoFileUploadPipelineForDonor';
+import GapNoPaymentProcessingSurfacedBeyondSt from './pages/GapNoPaymentProcessingSurfacedBeyondSt';
+import GapNoRealTimeDonorActivityFeed from './pages/GapNoRealTimeDonorActivityFeed';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -44,6 +65,8 @@ const navItems = [
   { path: '/budget', label: 'Budget Optimizer', icon: DollarSign },
   { path: '/impact', label: 'Impact Reports', icon: BarChart3 },
   { path: '/abtesting', label: 'A/B Testing', icon: GitBranch },
+  { path: '/integrations', label: 'Integrations', icon: Sparkles },
+  { path: '/backlog', label: 'Backlog Tools', icon: Sparkles }, // Apply pass 5
 ];
 
 export default function App() {
@@ -51,6 +74,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [globalToast, setGlobalToast] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,6 +88,24 @@ export default function App() {
       setAuthChecked(true);
     }
   }, []);
+
+  // Global API event listeners
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      localStorage.removeItem('token');
+      setUser(null);
+      navigate('/login');
+    };
+    const handleRateLimit = (e) => {
+      setGlobalToast({ message: e.detail || 'AI rate limit reached (20/hour). Please wait before making more AI requests.', type: 'error' });
+    };
+    apiEvents.addEventListener('unauthorized', handleUnauthorized);
+    apiEvents.addEventListener('ratelimit', handleRateLimit);
+    return () => {
+      apiEvents.removeEventListener('unauthorized', handleUnauthorized);
+      apiEvents.removeEventListener('ratelimit', handleRateLimit);
+    };
+  }, [navigate]);
 
   const handleLogin = (userData) => {
     setUser(userData);
@@ -87,6 +129,23 @@ export default function App() {
     return (
       <Routes>
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
+          {/* // === Batch 04 Gaps & Frontend Mounts === */}
+          <Route path="/cf-agentic-grant-prospecting-scanning-grant" element={<CfAgenticGrantProspectingScanningGrant />} />
+          <Route path="/cf-donor-engagement-scoring-with-real-time" element={<CfDonorEngagementScoringWithRealTime />} />
+          <Route path="/cf-event-roi-simulator-predicting-attendanc" element={<CfEventRoiSimulatorPredictingAttendanc />} />
+          <Route path="/cf-multi-stakeholder-survey-synthesis-colle" element={<CfMultiStakeholderSurveySynthesisColle />} />
+          <Route path="/cf-peer-to-peer-fundraising-team-builder" element={<CfPeerToPeerFundraisingTeamBuilder />} />
+          <Route path="/cf-government-procurement-advisor-scanning-" element={<CfGovernmentProcurementAdvisorScanning />} />
+          <Route path="/gap-no-donor-lifetime-value-prediction-endpo" element={<GapNoDonorLifetimeValuePredictionEndpo />} />
+          <Route path="/gap-no-major-donor-cultivation-plan-generato" element={<GapNoMajorDonorCultivationPlanGenerato />} />
+          <Route path="/gap-no-volunteer-skill-matching-ai-peermatch" element={<GapNoVolunteerSkillMatchingAiPeermatch />} />
+          <Route path="/gap-no-event-demand-forecasting" element={<GapNoEventDemandForecasting />} />
+          <Route path="/gap-limited-notifications-no-dedicated-modul" element={<GapLimitedNotificationsNoDedicatedModul />} />
+          <Route path="/gap-no-webhook-dispatch-for-donor-events" element={<GapNoWebhookDispatchForDonorEvents />} />
+          <Route path="/gap-no-file-upload-pipeline-for-donor" element={<GapNoFileUploadPipelineForDonor />} />
+          <Route path="/gap-no-payment-processing-surfaced-beyond-st" element={<GapNoPaymentProcessingSurfacedBeyondSt />} />
+          <Route path="/gap-no-real-time-donor-activity-feed" element={<GapNoRealTimeDonorActivityFeed />} />
+
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -94,6 +153,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex bg-slate-50">
+      {globalToast && <Toast {...globalToast} onClose={() => setGlobalToast(null)} />}
       {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setMobileOpen(false)} />
@@ -181,6 +241,22 @@ export default function App() {
               </span>
             )}
           </NavLink>
+          <NavLink
+            to="/ai-predictions"
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 mx-2 px-3 py-2 rounded-lg text-sm transition-all duration-150 ${
+                isActive
+                  ? 'bg-gradient-to-r from-indigo-600/40 to-emerald-600/40 text-emerald-300 font-medium'
+                  : 'text-emerald-400 hover:bg-emerald-500/10'
+              }`
+            }
+          >
+            <div className="w-5 h-5 flex-shrink-0 relative">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            {sidebarOpen && <span className="truncate">AI Predictions</span>}
+          </NavLink>
         </nav>
 
         {/* User */}
@@ -232,6 +308,9 @@ export default function App() {
             <Route path="/goals" element={<Goals />} />
             <Route path="/calendar" element={<ContentCalendar />} />
             <Route path="/ai-center" element={<AICenter />} />
+            <Route path="/ai-predictions" element={<AIPredictions />} />
+            <Route path="/integrations" element={<Integrations />} />
+            <Route path="/backlog" element={<Backlog />} />{/* Apply pass 5 */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

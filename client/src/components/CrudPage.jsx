@@ -30,23 +30,34 @@ export default function CrudPage({
   const [aiTitle, setAiTitle] = useState('');
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+  const limit = 20;
 
   const notify = (message, type = 'success') => setToast({ message, type });
 
-  const loadItems = useCallback(async () => {
+  const loadItems = useCallback(async (p = page) => {
     setLoading(true);
     try {
-      const res = await api.getAll(resource);
-      const arr = res.data || res || [];
-      setItems(Array.isArray(arr) ? arr : []);
+      const res = await api.getAll(resource, { page: p, limit });
+      // Support both paginated { data, pagination } and legacy flat array responses
+      if (res && res.data && res.pagination) {
+        setItems(Array.isArray(res.data) ? res.data : []);
+        setPagination(res.pagination);
+      } else {
+        const arr = Array.isArray(res) ? res : (res.data || []);
+        setItems(Array.isArray(arr) ? arr : []);
+        setPagination(null);
+      }
     } catch {
       setItems([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
-  }, [resource]);
+  }, [resource, page, limit]);
 
-  useEffect(() => { loadItems(); }, [loadItems]);
+  useEffect(() => { loadItems(page); }, [loadItems, page]);
 
   const openCreate = () => {
     setEditItem(null);
@@ -243,7 +254,7 @@ export default function CrudPage({
             {Icon && <Icon size={28} />}
             <div>
               <h1 className="text-2xl font-bold">{title}</h1>
-              <p className="text-white/70 text-sm mt-0.5">{items.length} {itemLabel.toLowerCase()}s total</p>
+              <p className="text-white/70 text-sm mt-0.5">{pagination ? pagination.total : items.length} {itemLabel.toLowerCase()}s total</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -308,6 +319,47 @@ export default function CrudPage({
               ))}
             </tbody>
           </table>
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between px-5 py-3 border-t bg-slate-50">
+              <span className="text-xs text-slate-500">
+                Page {pagination.page} of {pagination.totalPages} &mdash; {pagination.total} total
+              </span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={pagination.page <= 1}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Prev
+                </button>
+                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                  const start = Math.max(1, Math.min(pagination.page - 2, pagination.totalPages - 4));
+                  const p = start + i;
+                  if (p > pagination.totalPages) return null;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                        p === pagination.page
+                          ? 'border-indigo-500 bg-indigo-500 text-white'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                  disabled={pagination.page >= pagination.totalPages}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

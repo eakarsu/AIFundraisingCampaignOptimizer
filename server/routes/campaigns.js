@@ -3,11 +3,18 @@ const pool = require('../db');
 const auth = require('../middleware/auth');
 const { callAI } = require('../openrouter');
 
-// GET / - list all campaigns
+router.use(auth);
+
+// GET / - list all campaigns with pagination
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM campaigns ORDER BY created_at DESC');
-    res.json(result.rows);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+    const countResult = await pool.query('SELECT COUNT(*) FROM campaigns');
+    const total = parseInt(countResult.rows[0].count);
+    const result = await pool.query('SELECT * FROM campaigns ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]);
+    res.json({ data: result.rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (err) {
     console.error('List campaigns error:', err);
     res.status(500).json({ error: 'Failed to fetch campaigns' });
@@ -148,6 +155,42 @@ Active Channels: ${channels || 'Email, Social Media, Direct Mail, Events'}`;
   } catch (err) {
     console.error('AI campaign optimize error:', err);
     res.status(500).json({ error: 'Failed to optimize campaign' });
+  }
+});
+
+// POST /:id/donors - link a donor to a campaign
+router.post('/:id/donors', async (req, res) => {
+  try {
+    const { donor_id, amount } = req.body;
+    const result = await pool.query(
+      `INSERT INTO campaign_donors (campaign_id, donor_id, amount)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (campaign_id, donor_id) DO UPDATE SET amount = $3, donated_at = NOW()
+       RETURNING *`,
+      [req.params.id, donor_id, amount || null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Link donor to campaign error:', err);
+    res.status(500).json({ error: 'Failed to link donor to campaign' });
+  }
+});
+
+// GET /:id/donors - list donors for a campaign
+router.get('/:id/donors', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT d.*, cd.amount as campaign_amount, cd.donated_at
+       FROM donors d
+       JOIN campaign_donors cd ON cd.donor_id = d.id
+       WHERE cd.campaign_id = $1
+       ORDER BY cd.donated_at DESC`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('List campaign donors error:', err);
+    res.status(500).json({ error: 'Failed to fetch campaign donors' });
   }
 });
 

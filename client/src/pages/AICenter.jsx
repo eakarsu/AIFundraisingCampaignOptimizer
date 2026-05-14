@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Sparkles, Target, PenTool, BarChart3, Users, TrendingUp, Send, Loader2, Copy, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Sparkles, Target, PenTool, BarChart3, Users, TrendingUp, Send, Loader2, Copy, Check, Building2, DollarSign, Mail } from 'lucide-react';
 import { api } from '../api';
 import AIResponse from '../components/AIResponse';
 
@@ -77,6 +77,15 @@ export default function AICenter() {
   const [results, setResults] = useState({});
   const [loading, setLoading] = useState({});
   const [copied, setCopied] = useState({});
+  const [orgStats, setOrgStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    api.getStats()
+      .then(data => setOrgStats(data))
+      .catch(() => setOrgStats(null))
+      .finally(() => setStatsLoading(false));
+  }, []);
 
   const handleSubmit = async (agentId) => {
     const prompt = prompts[agentId];
@@ -117,6 +126,58 @@ export default function AICenter() {
             <p className="text-slate-500 text-sm">5 specialized AI agents to supercharge your fundraising</p>
           </div>
         </div>
+      </div>
+
+      {/* Organization Stats Card */}
+      <div className="mb-6 p-4 rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-emerald-50">
+        <div className="flex items-center gap-2 mb-3">
+          <Building2 className="w-4 h-4 text-indigo-500" />
+          <span className="text-sm font-semibold text-slate-700">Organization Stats</span>
+          <span className="text-xs text-slate-400 ml-1">(injected into every AI agent)</span>
+        </div>
+        {statsLoading ? (
+          <div className="flex items-center gap-2 text-slate-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-xs">Loading stats...</span>
+          </div>
+        ) : orgStats ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Users className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Donors</span>
+              </div>
+              <p className="text-xl font-bold text-slate-800">{orgStats.donor_count?.toLocaleString() || 0}</p>
+            </div>
+            <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-1.5 mb-1">
+                <DollarSign className="w-3.5 h-3.5 text-indigo-500" />
+                <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Total Raised</span>
+              </div>
+              <p className="text-xl font-bold text-slate-800">${Number(orgStats.total_raised || 0).toLocaleString()}</p>
+            </div>
+            <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Target className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Campaigns</span>
+              </div>
+              <p className="text-xl font-bold text-slate-800">{orgStats.campaign_count || 0}
+                <span className="text-sm font-normal text-emerald-600 ml-1">({orgStats.active_campaigns || 0} active)</span>
+              </p>
+            </div>
+            <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Mail className="w-3.5 h-3.5 text-rose-500" />
+                <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Avg Open Rate</span>
+              </div>
+              <p className="text-xl font-bold text-slate-800">
+                {orgStats.avg_open_rate != null ? `${orgStats.avg_open_rate}%` : 'N/A'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400">Stats unavailable</p>
+        )}
       </div>
 
       {/* Agent Cards */}
