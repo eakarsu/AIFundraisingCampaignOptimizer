@@ -59,6 +59,7 @@ app.use('/api/peer-matching', require('./routes/peerMatching'));
 app.use('/api/agentic', aiRateLimiter, require('./routes/agenticGrants'));
 app.use('/api/event-roi', aiRateLimiter, require('./routes/eventROISimulator'));
 app.use('/api/donor-engagement', aiRateLimiter, require('./routes/donorEngagementScoring'));
+app.use('/api/donor-fatigue-throttle', require('./routes/donorFatigueThrottle'));
 
 // Health check
 app.get('/api/health', (req, res) => {

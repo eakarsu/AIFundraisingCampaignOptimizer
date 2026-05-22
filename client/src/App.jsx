@@ -28,6 +28,7 @@ import AIPredictions from './pages/AIPredictions';
 import Integrations from './pages/Integrations';
 import Backlog from './pages/Backlog'; // Apply pass 5
 import Login from './pages/Login';
+import DonorFatigueThrottle from './pages/DonorFatigueThrottle';
 
 // === Batch 04 Gaps & Frontend Mounts ===
 import CfAgenticGrantProspectingScanningGrant from './pages/CfAgenticGrantProspectingScanningGrant';
@@ -45,6 +46,9 @@ import GapNoWebhookDispatchForDonorEvents from './pages/GapNoWebhookDispatchForD
 import GapNoFileUploadPipelineForDonor from './pages/GapNoFileUploadPipelineForDonor';
 import GapNoPaymentProcessingSurfacedBeyondSt from './pages/GapNoPaymentProcessingSurfacedBeyondSt';
 import GapNoRealTimeDonorActivityFeed from './pages/GapNoRealTimeDonorActivityFeed';
+
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -67,6 +71,7 @@ const navItems = [
   { path: '/abtesting', label: 'A/B Testing', icon: GitBranch },
   { path: '/integrations', label: 'Integrations', icon: Sparkles },
   { path: '/backlog', label: 'Backlog Tools', icon: Sparkles }, // Apply pass 5
+  { path: '/donor-fatigue-throttle', label: 'Donor Fatigue', icon: Heart },
 ];
 
 export default function App() {
@@ -128,6 +133,9 @@ export default function App() {
   if (!user) {
     return (
       <Routes>
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
           {/* // === Batch 04 Gaps & Frontend Mounts === */}
           <Route path="/cf-agentic-grant-prospecting-scanning-grant" element={<CfAgenticGrantProspectingScanningGrant />} />
@@ -311,6 +319,7 @@ export default function App() {
             <Route path="/ai-predictions" element={<AIPredictions />} />
             <Route path="/integrations" element={<Integrations />} />
             <Route path="/backlog" element={<Backlog />} />{/* Apply pass 5 */}
+            <Route path="/donor-fatigue-throttle" element={<DonorFatigueThrottle />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
