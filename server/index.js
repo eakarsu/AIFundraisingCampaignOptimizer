@@ -2,18 +2,10 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const express = require('express');
 const cors = require('cors');
 const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
-
-// === Batch 04 Gaps & Frontend Mounts ===
-const route_gap_no_donor_lifetime_value_prediction_endpo = require('./routes/gap-no-donor-lifetime-value-prediction-endpo');
-const route_gap_no_major_donor_cultivation_plan_generato = require('./routes/gap-no-major-donor-cultivation-plan-generato');
-const route_gap_no_volunteer_skill_matching_ai_peermatch = require('./routes/gap-no-volunteer-skill-matching-ai-peermatch');
-const route_gap_no_event_demand_forecasting = require('./routes/gap-no-event-demand-forecasting');
-const route_gap_limited_notifications_no_dedicated_modul = require('./routes/gap-limited-notifications-no-dedicated-modul');
-const route_gap_no_webhook_dispatch_for_donor_events = require('./routes/gap-no-webhook-dispatch-for-donor-events');
-const route_gap_no_file_upload_pipeline_for_donor = require('./routes/gap-no-file-upload-pipeline-for-donor');
-const route_gap_no_payment_processing_surfaced_beyond_st = require('./routes/gap-no-payment-processing-surfaced-beyond-st');
-const route_gap_no_real_time_donor_activity_feed = require('./routes/gap-no-real-time-donor-activity-feed');
 const app = express();
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be configured with at least 32 characters');
+}
 
 // Middleware
 app.use(cors({
@@ -60,6 +52,7 @@ app.use('/api/agentic', aiRateLimiter, require('./routes/agenticGrants'));
 app.use('/api/event-roi', aiRateLimiter, require('./routes/eventROISimulator'));
 app.use('/api/donor-engagement', aiRateLimiter, require('./routes/donorEngagementScoring'));
 app.use('/api/donor-fatigue-throttle', require('./routes/donorFatigueThrottle'));
+app.use('/api/grant-workflow', require('./routes/governedGrants'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -73,16 +66,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.SERVER_PORT || 3001;
-
-app.use('/api/gap-no-donor-lifetime-value-prediction-endpo', route_gap_no_donor_lifetime_value_prediction_endpo);
-app.use('/api/gap-no-major-donor-cultivation-plan-generato', route_gap_no_major_donor_cultivation_plan_generato);
-app.use('/api/gap-no-volunteer-skill-matching-ai-peermatch', route_gap_no_volunteer_skill_matching_ai_peermatch);
-app.use('/api/gap-no-event-demand-forecasting', route_gap_no_event_demand_forecasting);
-app.use('/api/gap-limited-notifications-no-dedicated-modul', route_gap_limited_notifications_no_dedicated_modul);
-app.use('/api/gap-no-webhook-dispatch-for-donor-events', route_gap_no_webhook_dispatch_for_donor_events);
-app.use('/api/gap-no-file-upload-pipeline-for-donor', route_gap_no_file_upload_pipeline_for_donor);
-app.use('/api/gap-no-payment-processing-surfaced-beyond-st', route_gap_no_payment_processing_surfaced_beyond_st);
-app.use('/api/gap-no-real-time-donor-activity-feed', route_gap_no_real_time_donor_activity_feed);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
