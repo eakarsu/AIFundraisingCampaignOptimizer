@@ -8,8 +8,13 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 }
 
 // Middleware
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',').map(origin => origin.trim()).filter(Boolean);
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('CORS origin denied'));
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
