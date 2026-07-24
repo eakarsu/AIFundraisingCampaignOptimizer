@@ -28,7 +28,7 @@ export default function Login({ onLogin: onAuth }) {
   };
 
   const quickLogin = () => {
-    setForm({ name: '', email: 'admin@fundraiser.org', password: 'password123' });
+    setForm({ name: '', email: import.meta.env.VITE_DEMO_EMAIL || '', password: import.meta.env.VITE_DEMO_PASSWORD || '' });
   };
 
   return (

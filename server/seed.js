@@ -6,6 +6,12 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+function requireDemoPassword() {
+  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD || '';
+  if (password.length < 12 || password.length > 1024) throw new Error('DEMO_PASSWORD must contain 12-1024 characters');
+  return password;
+}
+
 async function seed() {
   const client = await pool.connect();
   try {
@@ -201,7 +207,7 @@ async function seed() {
     // ==================== SEED DATA ====================
 
     // Demo user
-    const hashedPassword = await bcrypt.hash('password123', 10);
+    const hashedPassword = await bcrypt.hash(requireDemoPassword(), 10);
     await client.query(
       `INSERT INTO users (email, password, name, organization) VALUES ($1, $2, $3, $4) ON CONFLICT (email) DO NOTHING`,
       ['admin@fundraiser.org', hashedPassword, 'Sarah Mitchell', 'Hope Forward Foundation']
@@ -587,7 +593,7 @@ async function seed() {
     console.log('Content calendar seeded.');
 
     console.log('\nDatabase seeding completed successfully!');
-    console.log('Demo login: admin@fundraiser.org / password123');
+    console.log('Demo login users provisioned from the local environment.');
   } catch (err) {
     console.error('Seed error:', err);
     throw err;
