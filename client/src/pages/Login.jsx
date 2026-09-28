@@ -92,7 +92,7 @@ export default function Login({ onLogin: onAuth }) {
             <button onClick={quickLogin}
                     className="btn-success w-full flex items-center justify-center gap-2 py-2.5 text-sm">
               <Sparkles size={16} />
-              Quick Demo Login
+              Auto Fill Demo Credentials
             </button>
 
             <button onClick={() => { setIsRegister(!isRegister); setError(''); }}
