@@ -71,6 +71,14 @@ const agents = [
   },
 ];
 
+const exampleContext = {
+  strategist: 'A neighborhood education nonprofit has a $100,000 annual appeal goal, 1,200 active donors, and a four-person team. Include audience segments, channel plan, timeline, budget assumptions, measures, and risks.',
+  copywriter: 'A food-access nonprofit delivers weekly groceries to 80 households. Write donor-facing copy with a warm tone, one clear call to action, and no invented impact claims.',
+  analyst: 'A small nonprofit raised $82,000 last quarter versus $96,000 a year earlier. Email response fell from 4.2% to 3.1%; event revenue was steady. Separate observations from hypotheses and recommend checks.',
+  profiler: 'Use a hypothetical donor who gave $500 annually for three years and attended two events. Identify signals, unknowns, a respectful stewardship plan, and data needed before any capacity estimate.',
+  forecaster: 'An education nonprofit has 420 monthly donors at $28 average, 4% monthly churn, and a 12-month planning horizon. Show scenarios and assumptions rather than asserting market-wide trends.',
+};
+
 export default function AICenter() {
   const [activeAgent, setActiveAgent] = useState(null);
   const [prompts, setPrompts] = useState({});
@@ -96,7 +104,7 @@ export default function AICenter() {
 
     try {
       const res = await api.aiCenter(agentId, { prompt });
-      setResults(prev => ({ ...prev, [agentId]: res.result || res.data || res }));
+      setResults(prev => ({ ...prev, [agentId]: res.result ?? res.data ?? res }));
     } catch (err) {
       setResults(prev => ({ ...prev, [agentId]: { error: err.message } }));
     } finally {
@@ -221,7 +229,7 @@ export default function AICenter() {
                     <button
                       key={i}
                       onClick={() => {
-                        setPrompts(prev => ({ ...prev, [agent.id]: ex }));
+                        setPrompts(prev => ({ ...prev, [agent.id]: `${ex}. ${exampleContext[agent.id]}` }));
                         setActiveAgent(agent.id);
                       }}
                       className="text-xs px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
@@ -259,7 +267,7 @@ export default function AICenter() {
                   </div>
                 )}
 
-                {result && !isLoading && (
+                {result !== null && result !== undefined && !isLoading && (
                   <div className="mt-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">AI Response</span>

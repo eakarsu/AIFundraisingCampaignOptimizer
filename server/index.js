@@ -65,6 +65,28 @@ app.get('/api/health', (req, res) => {
 });
 
 // Global error handler
+
+// Advisory AI reports only; native execution and approval routes stay unchanged.
+const aiWorkspaceSupport = require("./aiWorkspaceAdapters.cjs");
+const aiWorkspaceDatabase = require("./db.js");
+app.use('/api/report-workspace', require("./aiWorkspace.cjs").createAIWorkspaceRouter({
+  pool: aiWorkspaceDatabase, authenticateToken: require("./middleware/auth.js"),
+  aiRateLimiter: aiWorkspaceSupport.createWorkspaceLimiter(), features: require("./aiWorkspaceFeatures.json"),
+}));
+// Gap-feature AI endpoints (POST /api/<slug>) — mounted before the error handler so they are reachable.
+for (const gapSlug of [
+  'gap-limited-notifications-no-dedicated-modul',
+  'gap-no-donor-lifetime-value-prediction-endpo',
+  'gap-no-event-demand-forecasting',
+  'gap-no-file-upload-pipeline-for-donor',
+  'gap-no-major-donor-cultivation-plan-generato',
+  'gap-no-payment-processing-surfaced-beyond-st',
+  'gap-no-real-time-donor-activity-feed',
+  'gap-no-volunteer-skill-matching-ai-peermatch',
+  'gap-no-webhook-dispatch-for-donor-events',
+]) {
+  app.use(`/api/${gapSlug}`, require(`./routes/${gapSlug}`));
+}
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error' });

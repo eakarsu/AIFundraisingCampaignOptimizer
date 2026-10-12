@@ -28,7 +28,15 @@ export default function Login({ onLogin: onAuth }) {
   };
 
   const quickLogin = () => {
-    setForm({ name: '', email: import.meta.env.VITE_DEMO_EMAIL || '', password: import.meta.env.VITE_DEMO_PASSWORD || '' });
+    const email = import.meta.env.VITE_DEMO_EMAIL;
+    const password = import.meta.env.VITE_DEMO_PASSWORD;
+    if (!email || !password) {
+      setError('Demo credentials are not configured for this browser. Ask an administrator for the demo account details.');
+      return;
+    }
+    setIsRegister(false);
+    setError('');
+    setForm({ name: '', email, password });
   };
 
   return (
@@ -89,10 +97,10 @@ export default function Login({ onLogin: onAuth }) {
           </form>
 
           <div className="mt-4 flex flex-col gap-3">
-            <button onClick={quickLogin}
+            <button type="button" onClick={quickLogin}
                     className="btn-success w-full flex items-center justify-center gap-2 py-2.5 text-sm">
               <Sparkles size={16} />
-              Auto Fill Demo Credentials
+              Fill Demo Credentials
             </button>
 
             <button onClick={() => { setIsRegister(!isRegister); setError(''); }}

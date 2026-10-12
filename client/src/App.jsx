@@ -1,3 +1,4 @@
+import AIReportLibrary from "./components/AIReportLibrary";
 import { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, useNavigate, Navigate } from 'react-router-dom';
 import {
@@ -286,7 +287,7 @@ export default function App() {
             )}
           </div>
         </div>
-      </aside>
+      <AIReportLibrary /></aside>
 
       {/* Main content */}
       <main className="flex-1 min-w-0">

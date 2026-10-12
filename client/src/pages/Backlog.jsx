@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import AIReport from '../components/AIReport';
 
 /**
  * Apply pass 5 (FE) — surfaces the backlog endpoints added in Apply pass 5:
@@ -20,13 +21,10 @@ const TABS = [
   { id: 'agentic', label: 'Agentic Grants' },
 ];
 
-function Result({ value }) {
-  if (!value) return null;
-  return (
-    <pre style={{ background: '#0f172a', color: '#e2e8f0', padding: 12, borderRadius: 8, fontSize: 12, overflow: 'auto' }}>
-      {JSON.stringify(value, null, 2)}
-    </pre>
-  );
+function Result({ value, structured }) {
+  if (value === null || value === undefined) return null;
+  if (structured) return <AIReport response={value} title="Grant prospecting result" />;
+  return <pre style={{ background: '#0f172a', color: '#e2e8f0', padding: 12, borderRadius: 8, fontSize: 12, overflow: 'auto' }}>{JSON.stringify(value, null, 2)}</pre>;
 }
 
 export default function Backlog() {
@@ -42,6 +40,11 @@ export default function Backlog() {
   const [boardRole, setBoardRole] = useState('chair');
   const [scoreDonor, setScoreDonor] = useState('1');
   const [agenticQuery, setAgenticQuery] = useState('arts education for under-served youth');
+  const grantExamples = [
+    'Find grant prospects for free after-school literacy tutoring in Newark, New Jersey. Annual program budget: $180,000. Prioritize youth education and local foundations; distinguish verified eligibility from assumptions.',
+    'Find grant prospects for weekly fresh-food delivery to 80 low-income households in Philadelphia. Funding need: $75,000 for vehicles and food handling. Flag deadlines and requirements that need verification.',
+    'Find grant prospects for accessible music instruction and instruments in Chicago public schools. Funding need: $50,000. Rank mission fit and identify missing eligibility evidence before outreach.',
+  ];
 
   const refresh = async () => {
     setBusy(true);
@@ -184,12 +187,17 @@ export default function Backlog() {
           <button onClick={submit} disabled={busy} style={{ padding: '8px 14px', background: '#2563eb', color: 'white', border: 0, borderRadius: 6 }}>Run Match</button>
         )}
         {tab === 'agentic' && (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'end' }}>
+          <div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+              {grantExamples.map((example, index) => <button key={example} type="button" onClick={() => setAgenticQuery(example)} style={{ padding: '6px 10px', border: '1px solid #c4b5fd', borderRadius: 6, color: '#6d28d9' }}>Fill grant example {index + 1}</button>)}
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'end' }}>
             <label style={{ flex: 1 }}>
               <div style={{ fontSize: 12, color: '#64748b' }}>Mission focus</div>
               <input value={agenticQuery} onChange={(e) => setAgenticQuery(e.target.value)} style={{ width: '100%', padding: 6, border: '1px solid #cbd5e1', borderRadius: 6 }} />
             </label>
             <button onClick={submit} disabled={busy} style={{ padding: '8px 14px', background: '#7c3aed', color: 'white', border: 0, borderRadius: 6 }}>Run Loop</button>
+            </div>
           </div>
         )}
       </div>
@@ -201,7 +209,7 @@ export default function Backlog() {
       )}
 
       <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Result / list</div>
-      <Result value={data} />
+      <Result value={data} structured={tab === 'agentic'} />
     </div>
   );
 }

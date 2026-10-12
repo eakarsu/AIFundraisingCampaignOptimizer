@@ -16,7 +16,8 @@ export default function CampaignDonorsTab({ campaign }) {
     setLoading(true);
     try {
       const res = await api.getCampaignDonors(campaign.id);
-      setDonors(Array.isArray(res) ? res : res.data || []);
+      const rows = Array.isArray(res) ? res : res?.data;
+      setDonors(Array.isArray(rows) ? rows : []);
     } catch {
       setDonors([]);
     } finally {

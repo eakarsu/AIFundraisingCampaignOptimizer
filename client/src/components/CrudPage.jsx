@@ -118,7 +118,7 @@ export default function CrudPage({
     try {
       const body = action.getBody ? action.getBody(selected, items) : {};
       const res = await api.ai(resource, action.action, body);
-      setAiResult(res.data || res.result || res.content || res.response || res.suggestion || res.analysis || res);
+      setAiResult(res.data ?? res.result ?? res.content ?? res.response ?? res.suggestion ?? res.analysis ?? res);
     } catch (err) {
       setAiResult('AI request failed: ' + err.message);
     } finally {
@@ -174,12 +174,12 @@ export default function CrudPage({
         </div>
 
         {/* AI generated content on the item */}
-        {selected.aiContent && (
+        {selected.aiContent !== undefined && selected.aiContent !== null && (
           <div className="mb-4">
             <AIResponse content={selected.aiContent} title="AI Generated Content" />
           </div>
         )}
-        {selected.generatedContent && (
+        {selected.generatedContent !== undefined && selected.generatedContent !== null && (
           <div className="mb-4">
             <AIResponse content={selected.generatedContent} title="AI Generated Content" />
           </div>

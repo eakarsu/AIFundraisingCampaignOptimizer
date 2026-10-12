@@ -80,6 +80,35 @@ const tools = [
   },
 ];
 
+// A donor ID is a database reference. Keep the current selection, or require a real ID.
+export const predictionPresets = {
+  'donor-ltv': [
+    { label: 'Retention review', values: { horizon_years: 5, top_n: 20, notes: 'Review recurring gifts and lapsed donors after the spring appeal. Flag uncertain forecasts.' } },
+    { label: 'Major gift review', values: { horizon_years: 3, top_n: 12, notes: 'Prioritize donors with sustained giving and recent event participation; recommend respectful next asks.' } },
+    { label: 'Annual plan', values: { horizon_years: 1, top_n: 30, notes: 'Estimate next-year value by segment and identify stewardship opportunities.' } },
+  ],
+  'grant-recommend': [
+    { label: 'Youth literacy', values: { mission: 'Expand free after-school reading support for students in underserved neighborhoods.', focus_areas: 'youth literacy, after-school learning', budget_range: '$50,000–$150,000', geo: 'Newark and Essex County, New Jersey' } },
+    { label: 'Food access', values: { mission: 'Provide weekly fresh-food deliveries and nutrition education to low-income households.', focus_areas: 'food security, public health', budget_range: '$75,000–$250,000', geo: 'Philadelphia, Pennsylvania' } },
+    { label: 'Arts education', values: { mission: 'Offer accessible music instruction and instruments to public-school students.', focus_areas: 'arts education, youth development', budget_range: '$25,000–$100,000', geo: 'Chicago, Illinois' } },
+  ],
+  'event-forecast': [
+    { label: 'Community gala', values: { event_type: 'Community fundraising gala', capacity: 250, ticket_price: 125, lead_weeks: 12, channels: 'email, board outreach, local sponsors' } },
+    { label: 'Walkathon', values: { event_type: 'Family walkathon', capacity: 500, ticket_price: 25, lead_weeks: 10, channels: 'community partners, social media, email' } },
+    { label: 'Online auction', values: { event_type: 'Virtual benefit auction', capacity: 400, ticket_price: 0, lead_weeks: 8, channels: 'email, social media, partner newsletters' } },
+  ],
+  'major-donor-cultivation': [
+    { label: 'Capital campaign', values: { campaign_focus: 'Library renovation capital campaign', time_horizon_months: 6 } },
+    { label: 'Scholarships', values: { campaign_focus: 'Need-based student scholarship fund', time_horizon_months: 4 } },
+    { label: 'Year-end giving', values: { campaign_focus: 'Year-end unrestricted giving', time_horizon_months: 3 } },
+  ],
+  'volunteer-matching': [
+    { label: 'Food pantry', values: { task_description: 'Coordinate Saturday pantry check-in and safe food packing for 80 households.', required_skills: 'volunteer coordination, food handling, bilingual outreach', hours_needed: 6, deadline: 'Within four weeks' } },
+    { label: 'Benefit event', values: { task_description: 'Staff guest registration and accessibility support at a community benefit.', required_skills: 'event registration, accessibility, guest service', hours_needed: 5, deadline: 'Within eight weeks' } },
+    { label: 'Donor calls', values: { task_description: 'Make thank-you calls and record follow-up requests after the annual appeal.', required_skills: 'phone outreach, CRM notes, donor stewardship', hours_needed: 4, deadline: 'Within two weeks' } },
+  ],
+};
+
 export default function AIPredictions() {
   const [activeId, setActiveId] = useState('donor-ltv');
   const [forms, setForms] = useState({});
@@ -108,7 +137,7 @@ export default function AIPredictions() {
 
     try {
       const res = await api.aiCenter(tool.id, payload);
-      setResults((prev) => ({ ...prev, [tool.id]: res.result || res.data || res }));
+      setResults((prev) => ({ ...prev, [tool.id]: res.result ?? res.data ?? res }));
     } catch (err) {
       setResults((prev) => ({ ...prev, [tool.id]: { error: err.message } }));
     } finally {
@@ -178,6 +207,10 @@ export default function AIPredictions() {
 
       <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
         <h2 className="font-semibold text-gray-900">{tool.name}</h2>
+        <div className="flex flex-wrap gap-2" aria-label="Fill all example fields">
+          {predictionPresets[tool.id].map((preset) => <button key={preset.label} type="button" className="px-3 py-2 rounded-lg border border-indigo-200 text-indigo-700 text-sm" onClick={() => setForms((previous) => ({ ...previous, [tool.id]: { ...previous[tool.id], ...preset.values } }))}>{preset.label}</button>)}
+        </div>
+        {tool.id === 'major-donor-cultivation' && <p className="text-sm text-amber-700">A specific donor ID must come from a real donor record. Examples preserve any ID already entered.</p>}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {tool.fields.map((f) => (
             <div key={f.key} className={f.type === 'textarea' ? 'md:col-span-2' : ''}>
@@ -203,7 +236,7 @@ export default function AIPredictions() {
         </button>
       </div>
 
-      {(results[tool.id] || loading[tool.id]) && (
+      {(results[tool.id] !== null && results[tool.id] !== undefined || loading[tool.id]) && (
         <div className="mt-6">
           {results[tool.id]?.error ? (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -211,11 +244,7 @@ export default function AIPredictions() {
             </div>
           ) : (
             <AIResponse
-              content={
-                typeof results[tool.id] === 'string'
-                  ? results[tool.id]
-                  : JSON.stringify(results[tool.id], null, 2)
-              }
+              content={results[tool.id]}
               loading={!!loading[tool.id]}
               title={tool.name}
             />

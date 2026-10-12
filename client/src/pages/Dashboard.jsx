@@ -37,15 +37,23 @@ export default function Dashboard({ user }) {
           api.getAll('donors'),
           api.getAll('events'),
         ]);
-        const c = camps.status === 'fulfilled' ? (camps.value.data || camps.value || []) : [];
-        const d = donors.status === 'fulfilled' ? (donors.value.data || donors.value || []) : [];
-        const ev = events.status === 'fulfilled' ? (events.value.data || events.value || []) : [];
-        const raised = Array.isArray(c) ? c.reduce((s, x) => s + (Number(x.raised_amount) || 0), 0) : 0;
+        const rows = (result) => {
+          if (result.status !== 'fulfilled') return [];
+          const payload = result.value;
+          const value = Array.isArray(payload) ? payload : payload?.data;
+          return Array.isArray(value) ? value : [];
+        };
+        const total = (result, items) => result.status === 'fulfilled'
+          ? Number(result.value?.pagination?.total ?? items.length) : 0;
+        const c = rows(camps);
+        const d = rows(donors);
+        const ev = rows(events);
+        const raised = c.reduce((sum, item) => sum + (Number(item.raised_amount) || 0), 0);
         setStats({
-          campaigns: Array.isArray(c) ? c.length : 0,
-          donors: Array.isArray(d) ? d.length : 0,
+          campaigns: total(camps, c),
+          donors: total(donors, d),
           raised,
-          events: Array.isArray(ev) ? ev.length : 0,
+          events: total(events, ev),
         });
       } catch {}
     };
@@ -56,8 +64,8 @@ export default function Dashboard({ user }) {
       if (!f.resource) return;
       try {
         const res = await api.getAll(f.resource);
-        const arr = res.data || res || [];
-        setCounts(p => ({ ...p, [f.resource]: Array.isArray(arr) ? arr.length : 0 }));
+        const arr = Array.isArray(res) ? res : res?.data;
+        setCounts(p => ({ ...p, [f.resource]: Number(res?.pagination?.total ?? (Array.isArray(arr) ? arr.length : 0)) }));
       } catch {
         setCounts(p => ({ ...p, [f.resource]: 0 }));
       }
