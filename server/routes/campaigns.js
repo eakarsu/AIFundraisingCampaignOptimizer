@@ -11,9 +11,15 @@ router.get('/', async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
     const offset = (page - 1) * limit;
-    const countResult = await pool.query('SELECT COUNT(*) FROM campaigns');
+    const { search, status, category } = req.query;
+    const where=[]; const params=[];
+    if (search) { params.push(`%${search}%`); where.push(`(name ILIKE $${params.length} OR description ILIKE $${params.length})`); }
+    if (status) { params.push(status); where.push(`status = $${params.length}`); }
+    if (category) { params.push(category); where.push(`category = $${params.length}`); }
+    const clause = where.length ? ` WHERE ${where.join(' AND ')}` : '';
+    const countResult = await pool.query(`SELECT COUNT(*) FROM campaigns${clause}`, params);
     const total = parseInt(countResult.rows[0].count);
-    const result = await pool.query('SELECT * FROM campaigns ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]);
+    const result = await pool.query(`SELECT * FROM campaigns${clause} ORDER BY created_at DESC LIMIT $${params.length+1} OFFSET $${params.length+2}`, [...params, limit, offset]);
     res.json({ data: result.rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (err) {
     console.error('List campaigns error:', err);

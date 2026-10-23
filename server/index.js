@@ -47,6 +47,7 @@ app.use('/api/outreach', require('./routes/outreach'));
 app.use('/api/goals', require('./routes/goals'));
 app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/ai', aiRateLimiter, require('./routes/ai'));
+app.use('/api/feature-pack35c', require('./routes/featurePack35c'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/crm', require('./routes/crm'));
